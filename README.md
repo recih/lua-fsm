@@ -5,17 +5,17 @@ Lua Finite State Machine (v2.3.2)
 This standalone lua micro-framework provides a finite state machine for your pleasure.
 
  * fully ported (including test) from [javascript-state-machine](https://github.com/jakesgordon/javascript-state-machine), great thanks to jakesgordon
- * You can find the [code here](https://github.com/recih/luafsm)
- * You can read [specs code](https://github.com/recih/luafsm/tree/master/spec) as examples 
+ * You can find the [code here](https://github.com/recih/lua-fsm)
+ * You can read [specs code](https://github.com/recih/lua-fsm/tree/master/spec) as examples 
 
 Download
 ========
 
-You can download [luafsm.lua](https://github.com/recih/luafsm/raw/master/luafsm.js),
+You can download [luafsm.lua](https://github.com/recih/lua-fsm/raw/master/luafsm.js),
 
 Alternatively:
 
-    git clone git@github.com:recih/luafsm
+    git clone https://github.com/recih/lua-fsm.git
 
  * All code is in luafsm.lua
  * No 3rd party library is required
@@ -369,7 +369,7 @@ print(fsm:calm()) -- "event calm was naughty :- event not allowed in current sta
 License
 =======
 
-See [LICENSE](https://github.com/recih/luafsm/blob/master/LICENSE) file.
+See [LICENSE](https://github.com/recih/lua-fsm/blob/master/LICENSE) file.
 
 
 
