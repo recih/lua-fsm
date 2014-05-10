@@ -27,15 +27,17 @@ Include `luafsm.lua` in your web application, or, for nodejs `require("luafsm")`
 
 In its simplest form, create a standalone state machine using:
 
-    local fsm = luafsm.create {
-      initial = 'green',
-      events = {
-        { name = 'warn',  from = 'green',  to = 'yellow' },
-        { name = 'panic', from = 'yellow', to = 'red'    },
-        { name = 'calm',  from = 'red',    to = 'yellow' },
-        { name = 'clear', from = 'yellow', to = 'green'  },
-      }
-    }
+```lua
+local fsm = luafsm.create {
+  initial = 'green',
+  events = {
+    { name = 'warn',  from = 'green',  to = 'yellow' },
+    { name = 'panic', from = 'yellow', to = 'red'    },
+    { name = 'calm',  from = 'red',    to = 'yellow' },
+    { name = 'clear', from = 'yellow', to = 'green'  },
+  }
+}
+```
 
 ... will create an object with a method for each event:
 
@@ -60,15 +62,17 @@ if an event is allowed from multiple states, but should transition **to** a diff
 state depending on the current state, then provide multiple event entries with
 the same name:
 
-    local fsm = luafsm.create{
-      initial = 'hungry',
-      events = {
-        { name = 'eat',  from = 'hungry',                                to = 'satisfied' },
-        { name = 'eat',  from = 'satisfied',                             to = 'full'      },
-        { name = 'eat',  from = 'full',                                  to = 'sick'      },
-        { name = 'rest', from = {'hungry', 'satisfied', 'full', 'sick'}, to = 'hungry'    },
-      }
-    }
+```lua
+local fsm = luafsm.create{
+  initial = 'hungry',
+  events = {
+    { name = 'eat',  from = 'hungry',                                to = 'satisfied' },
+    { name = 'eat',  from = 'satisfied',                             to = 'full'      },
+    { name = 'eat',  from = 'full',                                  to = 'sick'      },
+    { name = 'rest', from = {'hungry', 'satisfied', 'full', 'sick'}, to = 'hungry'    },
+  }
+}
+```
 
 This example will create an object with 2 event methods:
 
@@ -116,33 +120,37 @@ All callbacks will be passed the same arguments:
 
 Callbacks can be specified when the state machine is first created:
 
-    local fsm = luafsm.create{
-      initial = 'green',
-      events = {
-        { name = 'warn',  from = 'green',  to = 'yellow' },
-        { name = 'panic', from = 'yellow', to = 'red'    },
-        { name = 'calm',  from = 'red',    to = 'yellow' },
-        { name = 'clear', from = 'yellow', to = 'green'  },
-      },
-      callbacks = {
-        onpanic =  function(self, event, msg) print('panic! ' .. msg)    end,
-        onclear =  function(self, event, msg) print('thanks to ' .. msg) end,
-        ongreen =  function(self, event)      print('green')             end,
-        onyellow = function(self, event)      print('yellow')            end,
-        onred =    function(self, event)      print('red')               end,
-      }
-    }
+```lua
+local fsm = luafsm.create{
+  initial = 'green',
+  events = {
+    { name = 'warn',  from = 'green',  to = 'yellow' },
+    { name = 'panic', from = 'yellow', to = 'red'    },
+    { name = 'calm',  from = 'red',    to = 'yellow' },
+    { name = 'clear', from = 'yellow', to = 'green'  },
+  },
+  callbacks = {
+    onpanic =  function(self, event, msg) print('panic! ' .. msg)    end,
+    onclear =  function(self, event, msg) print('thanks to ' .. msg) end,
+    ongreen =  function(self, event)      print('green')             end,
+    onyellow = function(self, event)      print('yellow')            end,
+    onred =    function(self, event)      print('red')               end,
+  }
+}
 
-    fsm:panic('killer bees')
-    fsm:clear('sedatives in the honey pots')
-    ...
+fsm:panic('killer bees')
+fsm:clear('sedatives in the honey pots')
+...
+```
 
 Additionally, they can be added and removed from the state machine at any time:
 
-    fsm.ongreen      = nil
-    fsm.onyellow     = nil
-    fsm.onred        = nil
-    fsm.onenterstate = function(self, event) print(event.to) end
+```lua
+fsm.ongreen      = nil
+fsm.onyellow     = nil
+fsm.onred        = nil
+fsm.onenterstate = function(self, event) print(event.to) end
+```
 
 
 The order in which callbacks occur is as follows:
@@ -180,8 +188,9 @@ You can now return `luafsm.ASYNC` from your `onleavestate` handler and the state
 will be _'put on hold'_ until you are ready to trigger the transition using the new `transition()`
 method.
 
-For example, using jQuery effects:
+For example:
 
+```lua
     local fsm = luafsm.create{
 
       initial = 'menu',
@@ -212,6 +221,7 @@ For example, using jQuery effects:
 
       }
     }
+```
 
 >> _NOTE: If you decide to cancel the ASYNC event, you can call `fsm.transition.cancel()`
 
@@ -223,34 +233,35 @@ the state machine functionality to the prototype, including your callbacks
 in your prototype, and providing a `startup` event for use when constructing
 instances:
 
-    local my_fsm = {}
-    local prototype = {
+```lua
+local my_fsm = {}
+local prototype = {
 
-      onpanic = function(self, event) print('panic')        end,
-      onclear = function(self, event) print('all is clear') end,
+  onpanic = function(self, event) print('panic')        end,
+  onclear = function(self, event) print('all is clear') end,
 
-      -- my other prototype methods
+  -- my other prototype methods
 
-    };
+};
 
-    function my_fsm.new()  -- my constructor function
-      local t = {}
-      setmetatable(t, {__index = prototype})
-      t:startup()
-      return t
-    end
+function my_fsm.new()  -- my constructor function
+  local t = {}
+  setmetatable(t, {__index = prototype})
+  t:startup()
+  return t
+end
 
-    luafsm.create {
-      target = prototype,
-      events = {
-        { name = 'startup', from = 'none',   to = 'green'  },
-        { name = 'warn',    from = 'green',  to = 'yellow' },
-        { name = 'panic',   from = 'yellow', to = 'red'    },
-        { name = 'calm',    from = 'red',    to = 'yellow' },
-        { name = 'clear',   from = 'yellow', to = 'green'  },
-      }
-    }
-
+luafsm.create {
+  target = prototype,
+  events = {
+    { name = 'startup', from = 'none',   to = 'green'  },
+    { name = 'warn',    from = 'green',  to = 'yellow' },
+    { name = 'panic',   from = 'yellow', to = 'red'    },
+    { name = 'calm',    from = 'red',    to = 'yellow' },
+    { name = 'clear',   from = 'yellow', to = 'green'  },
+  }
+}
+```
 
 This should be easy to adjust to fit your appropriate mechanism for object construction.
 
@@ -266,53 +277,61 @@ the library provides a number of simple options.
 By default, if you dont specify any initial state, the state machine will be in the `'none'`
 state and you would need to provide an event to take it out of this state:
 
-    local fsm = luafsm.create {
-      events = {
-        { name = 'startup', from = 'none',  to = 'green' },
-        { name = 'panic',   from = 'green', to = 'red'   },
-        { name = 'calm',    from = 'red',   to = 'green' },
-      }
-    }
-    print(fsm.current) -- "none"
-    fsm:startup()
-    print(fsm.current) -- "green"
+```lua
+local fsm = luafsm.create {
+  events = {
+    { name = 'startup', from = 'none',  to = 'green' },
+    { name = 'panic',   from = 'green', to = 'red'   },
+    { name = 'calm',    from = 'red',   to = 'green' },
+  }
+}
+print(fsm.current) -- "none"
+fsm:startup()
+print(fsm.current) -- "green"
+```
 
 If you specify the name of your initial state (as in all the earlier examples), then an
 implicit `startup` event will be created for you and fired when the state machine is constructed.
 
-    local fsm = luafsm.create {
-      initial = 'green',
-      events = {
-        { name = 'panic', from = 'green', to = 'red'   },
-        { name = 'calm',  from = 'red',   to = 'green' },
-      }
-    }
-    print(fsm.current) -- "green"
+```lua
+local fsm = luafsm.create {
+  initial = 'green',
+  events = {
+    { name = 'panic', from = 'green', to = 'red'   },
+    { name = 'calm',  from = 'red',   to = 'green' },
+  }
+}
+print(fsm.current) -- "green"
+```
 
 If your object already has a `startup` method you can use a different name for the initial event
 
-    local fsm = luafsm.create {
-      initial = { state = 'green', event = 'init' },
-      events = {
-        { name = 'panic', from = 'green', to = 'red'   },
-        { name = 'calm',  from = 'red',   to = 'green' },
-      }
-    }
-    print(fsm.current) -- "green"
+```lua
+local fsm = luafsm.create {
+  initial = { state = 'green', event = 'init' },
+  events = {
+    { name = 'panic', from = 'green', to = 'red'   },
+    { name = 'calm',  from = 'red',   to = 'green' },
+  }
+}
+print(fsm.current) -- "green"
+```
 
 Finally, if you want to wait to call the initial state transition event until a later date you
 can `defer` it:
 
-    local fsm = luafsm.create {
-      initial = { state = 'green', event = 'init', defer = true },
-      events = {
-        { name = 'panic', from = 'green', to = 'red'   },
-        { name = 'calm',  from = 'red',   to = 'green' },
-      }
-    }
-    print(fsm.current) -- "none"
-    fsm:init()
-    print(fsm.current) -- "green"
+```lua
+local fsm = luafsm.create {
+  initial = { state = 'green', event = 'init', defer = true },
+  events = {
+    { name = 'panic', from = 'green', to = 'red'   },
+    { name = 'calm',  from = 'red',   to = 'green' },
+  }
+}
+print(fsm.current) -- "none"
+fsm:init()
+print(fsm.current) -- "green"
+```
 
 Of course, we have now come full circle, this last example is pretty much functionally the
 same as the first example in this section where you simply define your own startup event.
@@ -332,17 +351,19 @@ By default, if you try to call an event method that is not allowed in the curren
 state machine will throw an exception. If you prefer to handle the problem yourself, you can
 define a custom `error` handler:
 
-    local fsm = luafsm.create {
-      initial = 'green',
-      error = function(self, event, error_code, error_message)
-        return 'event ' .. event.name .. ' was naughty :- ' .. error_message
-      end,
-      events = {
-        { name = 'panic', from = 'green', to = 'red'   },
-        { name = 'calm',  from = 'red',   to = 'green' },
-      }
-    }
-    print(fsm:calm()) -- "event calm was naughty :- event not allowed in current state green"
+```lua
+local fsm = luafsm.create {
+  initial = 'green',
+  error = function(self, event, error_code, error_message)
+    return 'event ' .. event.name .. ' was naughty :- ' .. error_message
+  end,
+  events = {
+    { name = 'panic', from = 'green', to = 'red'   },
+    { name = 'calm',  from = 'red',   to = 'green' },
+  }
+}
+print(fsm:calm()) -- "event calm was naughty :- event not allowed in current state green"
+```
 
 License
 =======
