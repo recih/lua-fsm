@@ -1,59 +1,55 @@
-Javascript Finite State Machine (v2.3.2)
+Lua Finite State Machine (v2.3.2)
 ========================================
 
-This standalone javascript micro-framework provides a finite state machine for your pleasure.
+This standalone lua micro-framework provides a finite state machine for your pleasure.
 
- * You can find the [code here](https://github.com/jakesgordon/javascript-state-machine)
- * You can find a [description here](http://codeincomplete.com/posts/2013/1/26/javascript_state_machine_v2_2_0/)
- * You can find a [working demo here](http://codeincomplete.com/posts/2011/8/19/javascript_state_machine_v2/example/)
+ * fully ported (including test) from [javascript-state-machine](https://github.com/jakesgordon/javascript-state-machine), great thanks to jakesgordon
+ * You can find the [code here](https://github.com/recih/luafsm)
+ * You can read [specs code](https://github.com/recih/luafsm/tree/master/spec) as examples 
 
 Download
 ========
 
-You can download [state-machine.js](https://github.com/jakesgordon/javascript-state-machine/raw/master/state-machine.js),
-or the [minified version](https://github.com/jakesgordon/javascript-state-machine/raw/master/state-machine.min.js)
+You can download [luafsm.lua](https://github.com/recih/luafsm/raw/master/luafsm.js),
 
 Alternatively:
 
-    git clone git@github.com:jakesgordon/javascript-state-machine
+    git clone git@github.com:recih/luafsm
 
-
- * All code is in state-machine.js
- * Minified version provided in state-machine.min.js
+ * All code is in luafsm.lua
  * No 3rd party library is required
- * Demo can be found in /index.html
- * QUnit (browser) tests can be found in /test/index.html
- * QUnit (headless) tests can be run with "node test/runner.js" (after installing node-qunit with "npm install")
+ * Busted tests can be run with "busted" (after installing busted with "luarocks install busted")
 
 Usage
 =====
 
-Include `state-machine.js` in your web application, or, for nodejs `require("javascript-state-machine.js")`.
+Include `luafsm.lua` in your web application, or, for nodejs `require("luafsm")`.
 
 In its simplest form, create a standalone state machine using:
 
-    var fsm = StateMachine.create({
-      initial: 'green',
-      events: [
-        { name: 'warn',  from: 'green',  to: 'yellow' },
-        { name: 'panic', from: 'yellow', to: 'red'    },
-        { name: 'calm',  from: 'red',    to: 'yellow' },
-        { name: 'clear', from: 'yellow', to: 'green'  }
-    ]});
+    local fsm = luafsm.create {
+      initial = 'green',
+      events = {
+        { name = 'warn',  from = 'green',  to = 'yellow' },
+        { name = 'panic', from = 'yellow', to = 'red'    },
+        { name = 'calm',  from = 'red',    to = 'yellow' },
+        { name = 'clear', from = 'yellow', to = 'green'  },
+      }
+    }
 
 ... will create an object with a method for each event:
 
- * fsm.warn()  - transition from 'green' to 'yellow'
- * fsm.panic() - transition from 'yellow' to 'red'
- * fsm.calm()  - transition from 'red' to 'yellow'
- * fsm.clear() - transition from 'yellow' to 'green'
+ * fsm:warn()  - transition from 'green' to 'yellow'
+ * fsm:panic() - transition from 'yellow' to 'red'
+ * fsm:calm()  - transition from 'red' to 'yellow'
+ * fsm:clear() - transition from 'yellow' to 'green'
 
 along with the following members:
 
  * fsm.current   - contains the current state
- * fsm.is(s)     - return true if state `s` is the current state
- * fsm.can(e)    - return true if event `e` can be fired in the current state
- * fsm.cannot(e) - return true if event `e` cannot be fired in the current state
+ * fsm:is(s)     - return true if state `s` is the current state
+ * fsm:can(e)    - return true if event `e` can be fired in the current state
+ * fsm:cannot(e) - return true if event `e` cannot be fired in the current state
 
 Multiple 'from' and 'to' states for a single event
 ==================================================
@@ -64,19 +60,20 @@ if an event is allowed from multiple states, but should transition **to** a diff
 state depending on the current state, then provide multiple event entries with
 the same name:
 
-    var fsm = StateMachine.create({
-      initial: 'hungry',
-      events: [
-        { name: 'eat',  from: 'hungry',                                to: 'satisfied' },
-        { name: 'eat',  from: 'satisfied',                             to: 'full'      },
-        { name: 'eat',  from: 'full',                                  to: 'sick'      },
-        { name: 'rest', from: ['hungry', 'satisfied', 'full', 'sick'], to: 'hungry'    },
-    ]});
+    local fsm = luafsm.create{
+      initial = 'hungry',
+      events = {
+        { name = 'eat',  from = 'hungry',                                to = 'satisfied' },
+        { name = 'eat',  from = 'satisfied',                             to = 'full'      },
+        { name = 'eat',  from = 'full',                                  to = 'sick'      },
+        { name = 'rest', from = {'hungry', 'satisfied', 'full', 'sick'}, to = 'hungry'    },
+      }
+    }
 
 This example will create an object with 2 event methods:
 
- * fsm.eat()
- * fsm.rest()
+ * fsm:eat()
+ * fsm:rest()
 
 The `rest` event will always transition to the `hungry` state, while the `eat` event
 will transition to a state that is dependent on the current state.
@@ -113,40 +110,39 @@ In addition, 4 general-purpose callbacks can be used to capture **all** event an
 
 All callbacks will be passed the same arguments:
 
- * **event** name
- * **from** state
- * **to** state
+ * **self** state machine instance itself
+ * **event** a event object (a table) like this: { name = 'warn', from = 'green', to = 'yellow' }
  * _(followed by any arguments you passed into the original event method)_
 
 Callbacks can be specified when the state machine is first created:
 
-    var fsm = StateMachine.create({
-      initial: 'green',
-      events: [
-        { name: 'warn',  from: 'green',  to: 'yellow' },
-        { name: 'panic', from: 'yellow', to: 'red'    },
-        { name: 'calm',  from: 'red',    to: 'yellow' },
-        { name: 'clear', from: 'yellow', to: 'green'  }
-      ],
-      callbacks: {
-        onpanic:  function(event, from, to, msg) { alert('panic! ' + msg);               },
-        onclear:  function(event, from, to, msg) { alert('thanks to ' + msg);            },
-        ongreen:  function(event, from, to)      { document.body.className = 'green';    },
-        onyellow: function(event, from, to)      { document.body.className = 'yellow';   },
-        onred:    function(event, from, to)      { document.body.className = 'red';      },
+    local fsm = luafsm.create{
+      initial = 'green',
+      events = {
+        { name = 'warn',  from = 'green',  to = 'yellow' },
+        { name = 'panic', from = 'yellow', to = 'red'    },
+        { name = 'calm',  from = 'red',    to = 'yellow' },
+        { name = 'clear', from = 'yellow', to = 'green'  },
+      },
+      callbacks = {
+        onpanic =  function(self, event, msg) print('panic! ' .. msg)    end,
+        onclear =  function(self, event, msg) print('thanks to ' .. msg) end,
+        ongreen =  function(self, event)      print('green')             end,
+        onyellow = function(self, event)      print('yellow')            end,
+        onred =    function(self, event)      print('red')               end,
       }
-    });
+    }
 
-    fsm.panic('killer bees');
-    fsm.clear('sedatives in the honey pots');
+    fsm:panic('killer bees')
+    fsm:clear('sedatives in the honey pots')
     ...
 
 Additionally, they can be added and removed from the state machine at any time:
 
-    fsm.ongreen      = null;
-    fsm.onyellow     = null;
-    fsm.onred        = null;
-    fsm.onenterstate = function(event, from, to) { document.body.className = to; };
+    fsm.ongreen      = nil
+    fsm.onyellow     = nil
+    fsm.onred        = nil
+    fsm.onenterstate = function(self, event) print(event.to) end
 
 
 The order in which callbacks occur is as follows:
@@ -180,44 +176,44 @@ A good example of this is when you transition out of a `menu` state, perhaps you
 fade the menu away, or slide it off the screen and don't want to transition to your `game` state
 until after that animation has been performed.
 
-You can now return `StateMachine.ASYNC` from your `onleavestate` handler and the state machine
+You can now return `luafsm.ASYNC` from your `onleavestate` handler and the state machine
 will be _'put on hold'_ until you are ready to trigger the transition using the new `transition()`
 method.
 
 For example, using jQuery effects:
 
-    var fsm = StateMachine.create({
+    local fsm = luafsm.create{
 
-      initial: 'menu',
+      initial = 'menu',
 
-      events: [
-        { name: 'play', from: 'menu', to: 'game' },
-        { name: 'quit', from: 'game', to: 'menu' }
-      ],
+      events = {
+        { name = 'play', from = 'menu', to = 'game' },
+        { name = 'quit', from = 'game', to = 'menu' }
+      },
 
-      callbacks: {
+      callbacks = {
 
-        onentermenu: function() { $('#menu').show(); },
-        onentergame: function() { $('#game').show(); },
+        onentermenu = function() menu_show() end,
+        onentergame = function() game_show() end,
 
-        onleavemenu: function() {
-          $('#menu').fadeOut('fast', function() {
-            fsm.transition();
-          });
-          return StateMachine.ASYNC; // tell StateMachine to defer next state until we call transition (in fadeOut callback above)
-        },
+        onleavemenu = function()
+          menu_fade_out(function()
+            fsm:transition()
+          end)
+          return luafsm.ASYNC -- tell luafsm to defer next state until we call transition (in fadeOut callback above)
+        end,
 
-        onleavegame: function() {
-          $('#game').slideDown('slow', function() {
-            fsm.transition();
-          };
-          return StateMachine.ASYNC; // tell StateMachine to defer next state until we call transition (in slideDown callback above)
-        }
+        onleavegame = function()
+          game_slide_down(function()
+            fsm:transition()
+          end)
+          return luafsm.ASYNC -- tell luafsm to defer next state until we call transition (in slideDown callback above)
+        end,
 
       }
-    });
+    }
 
->> _NOTE: If you decide to cancel the ASYNC event, you can call `fsm.transition.cancel();`
+>> _NOTE: If you decide to cancel the ASYNC event, you can call `fsm.transition.cancel()`
 
 State Machine Classes
 =====================
@@ -227,28 +223,33 @@ the state machine functionality to the prototype, including your callbacks
 in your prototype, and providing a `startup` event for use when constructing
 instances:
 
-    MyFSM = function() {    // my constructor function
-      this.startup();
-    };
+    local my_fsm = {}
+    local prototype = {
 
-    MyFSM.prototype = {
+      onpanic = function(self, event) print('panic')        end,
+      onclear = function(self, event) print('all is clear') end,
 
-      onpanic: function(event, from, to) { alert('panic');        },
-      onclear: function(event, from, to) { alert('all is clear'); },
-
-      // my other prototype methods
+      -- my other prototype methods
 
     };
 
-    StateMachine.create({
-      target: MyFSM.prototype,
-      events: [
-        { name: 'startup', from: 'none',   to: 'green'  },
-        { name: 'warn',    from: 'green',  to: 'yellow' },
-        { name: 'panic',   from: 'yellow', to: 'red'    },
-        { name: 'calm',    from: 'red',    to: 'yellow' },
-        { name: 'clear',   from: 'yellow', to: 'green'  }
-      ]});
+    function my_fsm.new()  -- my constructor function
+      local t = {}
+      setmetatable(t, {__index = prototype})
+      t:startup()
+      return t
+    end
+
+    luafsm.create {
+      target = prototype,
+      events = {
+        { name = 'startup', from = 'none',   to = 'green'  },
+        { name = 'warn',    from = 'green',  to = 'yellow' },
+        { name = 'panic',   from = 'yellow', to = 'red'    },
+        { name = 'calm',    from = 'red',    to = 'yellow' },
+        { name = 'clear',   from = 'yellow', to = 'green'  },
+      }
+    }
 
 
 This should be easy to adjust to fit your appropriate mechanism for object construction.
@@ -265,49 +266,53 @@ the library provides a number of simple options.
 By default, if you dont specify any initial state, the state machine will be in the `'none'`
 state and you would need to provide an event to take it out of this state:
 
-    var fsm = StateMachine.create({
-      events: [
-        { name: 'startup', from: 'none',  to: 'green' },
-        { name: 'panic',   from: 'green', to: 'red'   },
-        { name: 'calm',    from: 'red',   to: 'green' },
-    ]});
-    alert(fsm.current); // "none"
-    fsm.startup();
-    alert(fsm.current); // "green"
+    local fsm = luafsm.create {
+      events = {
+        { name = 'startup', from = 'none',  to = 'green' },
+        { name = 'panic',   from = 'green', to = 'red'   },
+        { name = 'calm',    from = 'red',   to = 'green' },
+      }
+    }
+    print(fsm.current) -- "none"
+    fsm:startup()
+    print(fsm.current) -- "green"
 
 If you specify the name of your initial state (as in all the earlier examples), then an
 implicit `startup` event will be created for you and fired when the state machine is constructed.
 
-    var fsm = StateMachine.create({
-      initial: 'green',
-      events: [
-        { name: 'panic', from: 'green', to: 'red'   },
-        { name: 'calm',  from: 'red',   to: 'green' },
-    ]});
-    alert(fsm.current); // "green"
+    local fsm = luafsm.create {
+      initial = 'green',
+      events = {
+        { name = 'panic', from = 'green', to = 'red'   },
+        { name = 'calm',  from = 'red',   to = 'green' },
+      }
+    }
+    print(fsm.current) -- "green"
 
 If your object already has a `startup` method you can use a different name for the initial event
 
-    var fsm = StateMachine.create({
-      initial: { state: 'green', event: 'init' },
-      events: [
-        { name: 'panic', from: 'green', to: 'red'   },
-        { name: 'calm',  from: 'red',   to: 'green' },
-    ]});
-    alert(fsm.current); // "green"
+    local fsm = luafsm.create {
+      initial = { state = 'green', event = 'init' },
+      events = {
+        { name = 'panic', from = 'green', to = 'red'   },
+        { name = 'calm',  from = 'red',   to = 'green' },
+      }
+    }
+    print(fsm.current) -- "green"
 
 Finally, if you want to wait to call the initial state transition event until a later date you
 can `defer` it:
 
-    var fsm = StateMachine.create({
-      initial: { state: 'green', event: 'init', defer: true },
-      events: [
-        { name: 'panic', from: 'green', to: 'red'   },
-        { name: 'calm',  from: 'red',   to: 'green' },
-    ]});
-    alert(fsm.current); // "none"
-    fsm.init();
-    alert(fsm.current); // "green"
+    local fsm = luafsm.create {
+      initial = { state = 'green', event = 'init', defer = true },
+      events = {
+        { name = 'panic', from = 'green', to = 'red'   },
+        { name = 'calm',  from = 'red',   to = 'green' },
+      }
+    }
+    print(fsm.current) -- "none"
+    fsm:init()
+    print(fsm.current) -- "green"
 
 Of course, we have now come full circle, this last example is pretty much functionally the
 same as the first example in this section where you simply define your own startup event.
@@ -327,33 +332,23 @@ By default, if you try to call an event method that is not allowed in the curren
 state machine will throw an exception. If you prefer to handle the problem yourself, you can
 define a custom `error` handler:
 
-    var fsm = StateMachine.create({
-      initial: 'green',
-      error: function(eventName, from, to, args, errorCode, errorMessage) {
-        return 'event ' + eventName + ' was naughty :- ' + errorMessage;
-      },
-      events: [
-        { name: 'panic', from: 'green', to: 'red'   },
-        { name: 'calm',  from: 'red',   to: 'green' },
-    ]});
-    alert(fsm.calm()); // "event calm was naughty :- event not allowed in current state green"
-
-Release Notes
-=============
-
-See [RELEASE NOTES](https://github.com/jakesgordon/javascript-state-machine/blob/master/RELEASE_NOTES.md) file.
+    local fsm = luafsm.create {
+      initial = 'green',
+      error = function(self, event, error_code, error_message)
+        return 'event ' .. event.name .. ' was naughty :- ' .. error_message
+      end,
+      events = {
+        { name = 'panic', from = 'green', to = 'red'   },
+        { name = 'calm',  from = 'red',   to = 'green' },
+      }
+    }
+    print(fsm:calm()) -- "event calm was naughty :- event not allowed in current state green"
 
 License
 =======
 
-See [LICENSE](https://github.com/jakesgordon/javascript-state-machine/blob/master/LICENSE) file.
+See [LICENSE](https://github.com/recih/luafsm/blob/master/LICENSE) file.
 
-Contact
-=======
-
-If you have any ideas, feedback, requests or bug reports, you can reach me at
-[jake@codeincomplete.com](mailto:jake@codeincomplete.com), or via
-my website: [Code inComplete](http://codeincomplete.com/)
 
 
 
