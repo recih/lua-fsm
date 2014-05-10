@@ -1,6 +1,7 @@
 Lua Finite State Machine (v2.3.2)
 ========================================
 
+[![Build Status](https://travis-ci.org/recih/lua-fsm.svg?branch=master)](https://travis-ci.org/recih/lua-fsm)
 This standalone lua micro-framework provides a finite state machine for your pleasure.
 
  * fully ported (including test) from [javascript-state-machine](https://github.com/jakesgordon/javascript-state-machine), great thanks to jakesgordon
