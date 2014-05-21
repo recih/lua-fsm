@@ -24,9 +24,14 @@ Alternatively:
 Usage
 =====
 
-Include `luafsm.lua` in your web application, or, for nodejs `require("luafsm")`.
+Simply use `require`:
+
+```lua
+local luafsm = require("luafsm")
+```
 
 In its simplest form, create a standalone state machine using:
+
 
 ```lua
 local fsm = luafsm.create {
